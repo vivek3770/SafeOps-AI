@@ -1,0 +1,10 @@
+google-genai
+torch
+chromadb
+networkx
+langgraph
+pydantic
+pytest
+numpy
+pandas
+pypdf
