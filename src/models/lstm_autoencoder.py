@@ -82,11 +82,10 @@ def calculate_reconstruction_error(model, data_loader, criterion, device="cpu"):
     errors = []
     with torch.no_grad():
         for batch in data_loader:
-            # Batch shape: (batch_size, seq_len, no_features)
-            batch = batch.to(device)
-            reconstructed = model(batch)
+            x = batch[0].to(device)
+            reconstructed = model(x)
             # Calculate element-wise MSE for each sequence in the batch
             # Mean error per sequence
-            loss = torch.mean((batch - reconstructed) ** 2, dim=(1, 2))
+            loss = torch.mean((x - reconstructed) ** 2, dim=(1, 2))
             errors.extend(loss.cpu().numpy())
     return np.array(errors)
