@@ -75,7 +75,8 @@ def run_permit_node(state: AgentState) -> Dict[str, Any]:
             regs = ["FACTORIES_ACT_36"]
         plant_graph.add_active_permit(p["permit_id"], p["type"], p["zone_id"], regs)
         
-    out = permit_agent.run(permits, current_time=state.get("current_time"))
+    sensor_val = state.get("sensor_anomaly_out", {}).get("current_value", 0.0)
+    out = permit_agent.run(permits, current_time=state.get("current_time"), current_gas=sensor_val)
     return {"permit_intel_out": out}
 
 def run_risk_fusion_node(state: AgentState) -> Dict[str, Any]:
@@ -149,9 +150,6 @@ builder.set_entry_point("sensor_node") # Simple entry point, we can chain manual
 # we can use custom routing or define START pointing to multiple nodes.
 # Let's write the flow:
 # A state graph starts at START. Let's add edges from START to each entry node:
-builder.add_edge("sensor_node", "risk_fusion_node")
-builder.add_edge("cv_node", "risk_fusion_node")
-builder.add_edge("permit_node", "risk_fusion_node")
 
 # Define how we enter. We can have a master entry node or run them sequentially/parallelly.
 # Let's create an input gateway node or start sequentially which is extremely robust and has zero dependency on 

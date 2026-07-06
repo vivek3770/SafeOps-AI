@@ -5,7 +5,7 @@ class PermitAgent:
     def __init__(self):
         pass
         
-    def run(self, active_permits: List[Dict], current_time: str = None) -> dict:
+    def run(self, active_permits: List[Dict], current_time: str = None, current_gas: float = 0.0) -> dict:
         """Analyzes active permits to detect safety conflicts (overlaps, expired permits, high-risk SIMOPS).
         
         Args:
@@ -18,6 +18,7 @@ class PermitAgent:
                 - workers_assigned (list)
                 - hazard_class (str)
             current_time (str): Optional override for checking expiry. If None, uses utcnow.
+            current_gas (float): Current gas sensor reading in LEL%.
             
         Returns:
             dict conforming to the frozen output schema for 'permit_intel'.
@@ -48,6 +49,17 @@ class PermitAgent:
                         })
                 except Exception as e:
                     print(f"Error parsing permit expiry time: {e}")
+
+        # 1.5 Check for OISD-105 Section 4.3 violation: Hot Work in presence of elevated gas
+        for p in active_permits:
+            if p["type"] == "HOT_WORK" and current_gas >= 20.0:
+                conflicts.append({
+                    "conflict_type": "SIMULTANEOUS_HIGH_RISK",
+                    "permit_ids": [p["permit_id"]],
+                    "zones_affected": [p["zone_id"]],
+                    "risk_description": f"OISD-105 Clause 4.3 violation: HOT_WORK permit active in {p['zone_id']} with elevated gas concentration ({current_gas}% LEL).",
+                    "severity": "CRITICAL"
+                })
 
         # 2. Check for OVERLAP of high-risk permits in the same zone (SIMOPS conflicts)
         # Group permits by zone
