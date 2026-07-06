@@ -24,6 +24,9 @@ SafePlant_AI_Complete_Project_Blueprint.docx
 SafePlant_AI_SDD_v2 (1).pdf
 blueprint_text.txt
 
+# Test scripts
+tests/
+
 # OS files
 Thumbs.db
 ehthumbs.db
