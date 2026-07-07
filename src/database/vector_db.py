@@ -22,12 +22,17 @@ class GeminiEmbeddingFunction(EmbeddingFunction):
     def __call__(self, input: Documents) -> Embeddings:
         if self.client:
             try:
-                # Use new SDK embedding method
-                response = self.client.models.embed_content(
-                    model="text-embedding-004",
-                    contents=list(input)
-                )
-                return [emb.values for emb in response.embeddings]
+                input_list = list(input)
+                batch_size = 90
+                embeddings = []
+                for i in range(0, len(input_list), batch_size):
+                    batch = input_list[i : i + batch_size]
+                    response = self.client.models.embed_content(
+                        model="text-embedding-004",
+                        contents=batch
+                    )
+                    embeddings.extend([emb.values for emb in response.embeddings])
+                return embeddings
             except Exception as e:
                 print(f"Failed to generate embeddings from Gemini API: {e}. Falling back to mock vectors.")
                 

@@ -122,7 +122,7 @@ class RAGAgent:
         try:
             # Call Gemini using the new GenAI SDK
             response = self.client.models.generate_content(
-                model='gemini-1.5-flash',
+                model=Config.GEMINI_MODEL,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json"

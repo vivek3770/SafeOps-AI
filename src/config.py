@@ -1,5 +1,9 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Base project directory
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -7,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 class Config:
     # API configuration
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
     # Storage paths
     DATA_DIR = BASE_DIR / "data"
