@@ -8,3 +8,8 @@ pytest
 numpy
 pandas
 pypdf
+fastapi
+uvicorn
+gradio
+
+

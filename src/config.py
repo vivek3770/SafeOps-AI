@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Force ignore the system's global GOOGLE_API_KEY to prevent API key clash
+if "GOOGLE_API_KEY" in os.environ:
+    os.environ.pop("GOOGLE_API_KEY")
+
 # Base project directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 

@@ -11,6 +11,7 @@ class GeminiEmbeddingFunction(EmbeddingFunction):
     """
     def __init__(self, api_key: str):
         self.api_key = api_key
+        self._logged_warning = False
         if api_key:
             # Initialize using the new Google GenAI SDK
             self.client = genai.Client(api_key=api_key)
@@ -34,7 +35,9 @@ class GeminiEmbeddingFunction(EmbeddingFunction):
                     embeddings.extend([emb.values for emb in response.embeddings])
                 return embeddings
             except Exception as e:
-                print(f"Failed to generate embeddings from Gemini API: {e}. Falling back to mock vectors.")
+                if not self._logged_warning:
+                    print(f"Failed to generate embeddings from Gemini API: {e}. Falling back to mock vectors (quiet mode active).")
+                    self._logged_warning = True
                 
         # Mock Embedding: Return a normalized deterministic random vector based on document content
         embeddings = []

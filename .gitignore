@@ -20,10 +20,15 @@ data/lstm_weights.pth
 data/normal_sensor_data.npy
 
 # Hackathon documentation and blueprint files (ignored from git)
+*.pdf
+*.docx
+data/raw_docs/
 6a38ce305640d_ET_AI_Hackathon_2026_Problem_Statements.pdf
+
 SafePlant_AI_Complete_Project_Blueprint.docx
 SafePlant_AI_SDD_v2 (1).pdf
 blueprint_text.txt
+AKG-T&P Policies-2025-26 (1).pdf
 
 # Test scripts
 tests/
