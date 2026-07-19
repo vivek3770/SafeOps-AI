@@ -11,5 +11,5 @@ pypdf
 fastapi
 uvicorn
 gradio
-
-
+ultralytics
+opencv-python
