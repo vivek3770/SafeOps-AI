@@ -6,6 +6,10 @@ import spaces
 from src.orchestrator.master_flow import flow_app
 
 @spaces.GPU
+def dummy_gpu_trigger():
+    """Dummy function to satisfy ZeroGPU requirement without blocking evaluate_safety_api."""
+    return "ZeroGPU Active"
+
 def evaluate_safety_api(payload_str: str):
     """Gradio API wrapper for the master multi-agent flow."""
     try:
