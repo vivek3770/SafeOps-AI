@@ -2,8 +2,10 @@ import gradio as gr
 import json
 import datetime
 import os
+import spaces
 from src.orchestrator.master_flow import flow_app
 
+@spaces.GPU
 def evaluate_safety_api(payload_str: str):
     """Gradio API wrapper for the master multi-agent flow."""
     try:
