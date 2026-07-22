@@ -110,7 +110,7 @@ def main():
             print(json.dumps(cv_payload, indent=2))
             
             # Send the JSON payload over HTTP to your local Java/Python Backend
-            backend_url = "http://localhost:8080/api/cv/frame"
+            backend_url = "http://13.204.35.23:8080/api/cv/frame"
             try:
                 # We use a short timeout so the video doesn't freeze if the backend is down
                 response = requests.post(backend_url, json=cv_payload, timeout=2.0)

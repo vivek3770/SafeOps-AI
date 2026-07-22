@@ -7,15 +7,12 @@ def test_huggingface_api():
     print("      TESTING LIVE HUGGING FACE AI ENGINE API            ")
     print("=========================================================")
     
-    # We are testing the Gradio API endpoint
     url = "https://monkey3770-safeops-ai-engine.hf.space/gradio_api/call/eval"
     
-    # 1. Create a mock plant state (simulate a gas spike + worker)
     mock_state = {
         "zone_id": "ZONE_3",
         "current_time": "2026-07-01T12:00:20Z",
         "shift_risk_factor": 0.1,
-        # Spike in gas levels to trigger critical risk
         "sensor_raw_history": [[35.0, 28.0, 1.2] for _ in range(12)],
         "cv_raw_frame": {
             "zone_id": "ZONE_3",
@@ -33,55 +30,69 @@ def test_huggingface_api():
         ]
     }
     
-    # 2. Wrap in Gradio's expected format
     payload = {
         "data": [json.dumps(mock_state)]
     }
     
     print(f"Sending POST request to: {url}")
-    print("Waiting for AI Engine to calculate risk (might take 15-30s if Hugging Face is waking up from sleep)...")
+    print("Waiting for AI Engine to calculate risk (might take 15-30s if Hugging Face is waking up)...")
     
     try:
-        # We use a 60 second timeout because Hugging Face ZeroGPU spaces sometimes take 20s to wake up if asleep
         response = requests.post(url, json=payload, timeout=60.0)
             
         if response.status_code == 200:
-            print("\n[SUCCESS] Received 200 OK from Hugging Face.")
+            print("\n[SUCCESS] Connected to Hugging Face successfully.")
             response_json = response.json()
             
-            # Gradio sometimes returns an EVENT ID that we have to poll, or the raw data directly.
-            # Let's see what the space returns.
             if "event_id" in response_json:
-                print(f"Gradio returned an Event ID: {response_json['event_id']}")
-                print("Wait, this means we need to poll the /call/eval/{event_id} endpoint.")
+                event_id = response_json["event_id"]
+                poll_url = f"{url}/{event_id}"
+                print(f"Gradio Event ID: {event_id}")
+                print(f"Streaming results from: {poll_url}...")
                 
-                # Poll for the result
-                poll_url = f"{url}/{response_json['event_id']}"
-                print(f"Polling {poll_url} for results...")
-                
-                # Gradio streams Server-Sent Events (SSE) from the poll URL
-                poll_resp = requests.get(poll_url, timeout=60.0)
-                print("\n--- RAW SSE RESPONSE ---")
-                print(poll_resp.text)
-                
-                # A quick hack to find the final data line in the SSE stream
-                for line in poll_resp.text.split('\n'):
-                    if line.startswith('data: ['):
-                        final_data_str = line[6:] # Strip 'data: '
-                        final_ai_results = json.loads(json.loads(final_data_str)[0])
-                        print("\n--- PARSED AI RESULTS ---")
-                        print(f"Risk Score: {final_ai_results.get('risk_fusion_out', {}).get('score')}")
-                        print(f"Severity: {final_ai_results.get('risk_fusion_out', {}).get('severity')}")
-                        print(f"Action: {final_ai_results.get('action_taken')}")
-                        break
-            
-            elif "data" in response_json:
-                final_ai_results = json.loads(response_json["data"][0])
-                print("\n--- PARSED AI RESULTS ---")
-                print(f"Risk Score: {final_ai_results.get('risk_fusion_out', {}).get('score')}")
-                print(f"Severity: {final_ai_results.get('risk_fusion_out', {}).get('severity')}")
-                print(f"Action: {final_ai_results.get('action_taken')}")
-                
+                # Stream the Server-Sent Events (SSE)
+                with requests.get(poll_url, stream=True, timeout=60.0) as r:
+                    for line in r.iter_lines():
+                        if line:
+                            decoded_line = line.decode('utf-8')
+                            if decoded_line.startswith("data: "):
+                                data_content = decoded_line[6:]
+                                if data_content != "null":
+                                    try:
+                                        data_json = json.loads(data_content)
+                                        final_ai_results = json.loads(data_json[0])
+                                        print("\n--- PARSED AI RESULTS ---")
+                                        print(f"Risk Score: {final_ai_results.get('risk_fusion_out', {}).get('score')}")
+                                        print(f"Severity: {final_ai_results.get('risk_fusion_out', {}).get('severity')}")
+                                        print(f"Action: {final_ai_results.get('action_taken')}")
+                                        
+                                        if "rag_compliance_out" in final_ai_results:
+                                            rag_out = final_ai_results["rag_compliance_out"]
+                                            print("\n--- RAG COMPLIANCE & SAFETY COPILOT REPORT ---")
+                                            
+                                            print("\nApplicable Regulations:")
+                                            for reg in rag_out.get("applicable_regulations", []):
+                                                print(f"  - [{reg.get('regulation_id')}] {reg.get('title')}: {reg.get('requirement')}")
+                                                
+                                            print("\nHistorical Precedents:")
+                                            for inc in rag_out.get("similar_incidents", []):
+                                                print(f"  - {inc.get('plant')} ({inc.get('date')}): {inc.get('description')}")
+                                                print(f"    Outcome: {inc.get('outcome')}")
+                                                
+                                            print("\nActionable Recommendations:")
+                                            for rec in rag_out.get("recommended_actions", []):
+                                                print(f"  * {rec}")
+                                            
+                                            print(f"\nSources Cited: {rag_out.get('rag_sources_cited', [])}")
+                                        return
+                                    except Exception as e:
+                                        # Skip lines that are not valid JSON arrays
+                                        pass
+                            elif decoded_line.startswith("event: error"):
+                                print("\n[ERROR] Hugging Face execution encountered a container/ZeroGPU error.")
+                                return
+            else:
+                print(f"\n[ERROR] Unexpected response format: {response_json}")
         else:
             print(f"\n[ERROR] Received status code {response.status_code}")
             print(response.text)
